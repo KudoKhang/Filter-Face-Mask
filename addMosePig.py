@@ -37,8 +37,8 @@ def addNose(frame):
         final = cv2.add(nose_area_no_nose, nose_pig)
         frame[top_left[1]:top_left[1] + nose_height, top_left[0]:top_left[0] + nose_width] = final
         
-        cv2.imshow("Nose Area", nose_area)
-        cv2.imshow("Nose Pig", nose_mask)
+        # cv2.imshow("Nose Area", nose_area)
+        # cv2.imshow("Nose Pig", nose_mask)
         # cv2.imshow("final", final)
 
 
