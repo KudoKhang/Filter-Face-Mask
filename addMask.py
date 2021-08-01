@@ -4,46 +4,43 @@ import dlib
 from math import hypot
 
 cap = cv2.VideoCapture(0)
-mask_img = cv2.imread('mask1.png')
+mask_img = cv2.imread('medical-mask.png')
+w, h , _ = mask_img.shape
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
 while True:
-    _, img = cap.read()
-    img = cv2.flip(img, 1)
-    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    faces = detector(img)
+    _, frame = cap.read()
+    frame = cv2.flip(frame, 1)
+    frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = detector(frame)
     for face in faces:
-        landmarks = predictor(img_gray, face)
-        mask_center = (landmarks.part(67).x, landmarks.part(67).y)
+        landmarks = predictor(frame_gray, face)
+
         bottom_mask = (landmarks.part(9).x, landmarks.part(9).y)
-        left_mask = (landmarks.part(1).x, landmarks.part(1).y)
-        right_mask = (landmarks.part(16).x, landmarks.part(16).y)
-        mask_width = int(hypot(right_mask[0] - left_mask[0], right_mask[1] - left_mask[1]))
-        mask_height = int(mask_width * 0.71)
+        top_left = (landmarks.part(1).x, landmarks.part(1).y)
+        top_right = (landmarks.part(16).x, landmarks.part(16).y)
 
-        print(mask_width, mask_height)
-        # Mask Position
-        top_left = left_mask
-        bottom_right = (right_mask[0],bottom_mask[1] )
-        
-        # top_left = (0,0)
-        # bottom_right = (170,120)
+        mask_width = int(hypot(top_right[0] - top_left[0], top_right[1] - top_left[1]))
+        mask_height = int(mask_width * w/h)
 
-        print(left_mask, bottom_right)
 
-        # Ading the new mask
-        # cv2.rectangle(img, top_left, bottom_right, (255,255,0), 2)
         mask = cv2.resize(mask_img, (mask_width, mask_height))
         mask_gray = cv2.cvtColor(mask, cv2.COLOR_BGRA2GRAY)
         _, mask_mask = cv2.threshold(mask_gray, 25,255, cv2.THRESH_BINARY_INV)
-        mask_area = img[top_left[1] - 10 :top_left[1] + mask_height - 10,top_left[0]:top_left[0] + mask_width]
-        mask_area_no_mask = cv2.bitwise_and(mask_area, mask_area, mask = mask_mask)
-        final = cv2.add(mask_area_no_mask, mask)
-        img[top_left[1] -10 :top_left[1] + mask_height -10 ,top_left[0]:top_left[0] + mask_width] = final
-       
 
-    cv2.imshow("result", img)
+        weight = 10
+        area = frame[top_left[1] - weight : top_left[1] + mask_height - weight, top_left[0] : top_left[0] + mask_width]
+        area_no_mask = cv2.bitwise_and(area, area, mask = mask_mask)
+        final = cv2.add(area_no_mask, mask)
+        frame[top_left[1] - weight : top_left[1] + mask_height - weight, top_left[0] : top_left[0] + mask_width] = final
 
+
+    cv2.imshow("mask_mask", mask_mask)
+    cv2.imshow("area", area)
+    cv2.imshow("area_no_mask", area_no_mask)
+    cv2.imshow("final", final)
+    cv2.imshow("frame", frame)
+    cv2.imshow("mask", mask)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
